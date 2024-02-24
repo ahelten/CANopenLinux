@@ -137,7 +137,9 @@ static CO_CANinterfaceState_t CO_CANerrorCrtl(
         }
         else if ((msg->data[1] & CAN_ERR_CRTL_RX_OVERFLOW) != 0) {
             log_printf(LOG_NOTICE, CAN_RX_BUF_OVERFLOW, CANerrorhandler->ifName);
+#ifdef INCLUDE_RX_BUFFER_OVERFLOW_ERROR_HANDLING
             CANerrorhandler->CANerrorStatus |= CO_CAN_ERRRX_OVERFLOW;
+#endif
         }
         else if ((msg->data[1] & CAN_ERR_CRTL_TX_OVERFLOW) != 0) {
             log_printf(LOG_NOTICE, CAN_TX_BUF_OVERFLOW, CANerrorhandler->ifName);
