@@ -4,6 +4,8 @@
 *.o
 *.persist
 *.persist.old
+.*.swp
+.*.swo
 
 #eclipse
 .cproject

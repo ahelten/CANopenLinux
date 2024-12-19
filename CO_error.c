@@ -136,9 +136,11 @@ static CO_CANinterfaceState_t CO_CANerrorCrtl(
             /* CANerrorhandler->CANerrorStatus |= CO_CAN_ERRTX_WARNING; */
         }
         else if ((msg->data[1] & CAN_ERR_CRTL_RX_OVERFLOW) != 0) {
-            log_printf(LOG_NOTICE, CAN_RX_BUF_OVERFLOW, CANerrorhandler->ifName);
 #ifdef INCLUDE_RX_BUFFER_OVERFLOW_ERROR_HANDLING
+            log_printf(LOG_NOTICE, CAN_RX_BUF_OVERFLOW, CANerrorhandler->ifName);
             CANerrorhandler->CANerrorStatus |= CO_CAN_ERRRX_OVERFLOW;
+#else
+            return CO_INTERFACE_LISTEN_ONLY;
 #endif
         }
         else if ((msg->data[1] & CAN_ERR_CRTL_TX_OVERFLOW) != 0) {
@@ -285,12 +287,20 @@ CO_CANinterfaceState_t CO_CANerror_rxMsgError(
 
     CO_CANinterfaceState_t result;
 
+// This is the original logging location but we've discovered what *appears* to be an
+// inaccurate "message dropped" error report so, to avoid the noise, this was moved to below so
+// that it would not print for that one circumstance. Yes, this could ignore some legit dropped
+// messages but there is no way to tell them apart. FWIW, `candump` and CANbus data patterns
+// (i.e. expected data) were used to determine no CANbus messages were actually being dropped.
+// Yes, this begs the question, then why is it being reported by the driver? Don't know.
+#ifdef INCLUDE_RX_BUFFER_OVERFLOW_ERROR_HANDLING
     /* Log all error messages in full to debug log, even if analysis is done
      * further on. */
     log_printf(LOG_DEBUG, DBG_CAN_ERROR_GENERAL, (int)msg->can_id,
                msg->data[0], msg->data[1], msg->data[2], msg->data[3],
                msg->data[4], msg->data[5], msg->data[6], msg->data[7],
                CANerrorhandler->ifName);
+#endif
 
     /* Process errors - start with the most unambiguous one */
 
@@ -308,6 +318,14 @@ CO_CANinterfaceState_t CO_CANerror_rxMsgError(
     if (result != CO_INTERFACE_ACTIVE) {
         return result;
     }
+
+#ifndef INCLUDE_RX_BUFFER_OVERFLOW_ERROR_HANDLING
+    /* Log all error messages in full to debug log, only if we don't return early above! */
+    log_printf(LOG_DEBUG, DBG_CAN_ERROR_GENERAL, (int)msg->can_id,
+               msg->data[0], msg->data[1], msg->data[2], msg->data[3],
+               msg->data[4], msg->data[5], msg->data[6], msg->data[7],
+               CANerrorhandler->ifName);
+#endif
 
     return CO_INTERFACE_ACTIVE;
 }

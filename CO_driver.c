@@ -923,6 +923,7 @@ static int32_t CO_CANrxMsg(                 /* return index of received message 
 }
 
 
+extern void dumpCanbusMsg(struct can_frame *msg_);
 /******************************************************************************/
 bool_t CO_CANrxFromEpoll(CO_CANmodule_t *CANmodule,
                          struct epoll_event *ev,
@@ -969,6 +970,10 @@ bool_t CO_CANrxFromEpoll(CO_CANmodule_t *CANmodule,
                         CO_CANerror_rxMsg(&interface->errorhandler);
 #endif
                         int32_t idx = CO_CANrxMsg(CANmodule, &msg, buffer);
+
+#ifdef INCLUDE_DUMP_CANBUS_MSG
+                        dumpCanbusMsg(&msg);
+#endif
                         if (idx > -1) {
                             /* Store message info */
                             CANmodule->rxArray[idx].timestamp = timestamp;
